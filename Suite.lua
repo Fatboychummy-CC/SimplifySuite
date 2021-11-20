@@ -250,10 +250,10 @@ local function updatePackage(packageName, force)
   if not locals.Packages[packageName] then
     return false, string.format("Package '%s' is not installed.", packageName)
   end
-  if remotes.Packages[packageName] == locals.Packages[packageName] then
+  if not force and remotes.Packages[packageName] == locals.Packages[packageName] then
     return false, string.format("Package '%s' is already up-to-date.", packageName)
   end
-  if remotes.Packages[packageName] < locals.Packages[packageName] then
+  if not force and remotes.Packages[packageName] < locals.Packages[packageName] then
     return false, string.format("Package '%s' is a higher version locally than the remote version. ", packageName)
   end
 
