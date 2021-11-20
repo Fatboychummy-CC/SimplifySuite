@@ -116,10 +116,19 @@ local function getLocalPackages(filename, force)
     else
       log.Normal("Local cache is out-of-date, updating it.")
     end
-    cache.Local.Packages = readCSV {
+
+    -- read local package information
+    local data = readCSV {
       Source   = sources.LOCAL,
       Filename = LOCAL_CACHE_NAME
     }
+
+    -- cache it in format we want.
+    cache.Local.Packages = {}
+    for i, item in ipairs(data) do
+      -- format: {Build#, Package-Name}
+      cache.Local.Packages[item[2]] = tonumber[item[1]]
+    end
     cache.Local.Expiry = os.epoch() + CACHE_EXPIRY_TIME
   end
 
@@ -155,21 +164,20 @@ local function getRemotePackages(force)
 end
 
 local function downloadPackageInfo(packageName, force)
-  local cache = getCache()
-  if force or cache
-    local address = string.format("%sRepos/%s.csv", remotes.SuiteRoot, packageName)
-    log.Low("Downloading package information from", address)
-    local data = readCSV {
-      Source  = source.HTTP,
-      Address = address
-    }
-    log.Low("Done.")
+  local address = string.format("%sRepos/%s.csv", remotes.SuiteRoot, packageName)
+  log.Low("Downloading package information from", address)
+  local data = readCSV {
+    Source  = source.HTTP,
+    Address = address
+  }
+  log.Low("Done.")
 
   return data
 end
 
 local function resolveDependencies(packageName, force, data)
-  data = data or {}
+  log.Normal("Resolving", packageName)
+  data = data or {Files = {}, Depends = {}}
   local _data = downloadPackageInfo(packageName)
 
   -- for each returned dependency, assign the highest required build version needed.
@@ -179,6 +187,36 @@ local function resolveDependencies(packageName, force, data)
     end
   end
 
+  --[[
+    TYPE, FILENAME/MIN, REMOTE_LOCATION/PACKAGE
+    DEP , 2           , Example-Dependency
+    FILE,./echo.lua   , https://raw.githubusercontent.com/Fatboychummy-CC/SimplifySuite/main/Examples/echo.lua
+  ]]
+  for _, item in ipairs(data) do
+    if item[1] == "DEP" then
+      log.Low("Found dependency", item[3])
+      if data.Depends[item[3]] then
+        if data.Depends[item[3]] < tonumber(item[2]) then
+          data.Depends[item[3]] = tonumber(item[2])
+        end
+      else
+        data.Depends[item[3]] = tonumber(item[2])
+        resolveDependencies(item[2], force, data)
+      end
+    elseif item[1] == "FILE" then
+      if not data.Files[item[2]] then
+        data.Files[item[2]] = item[3]
+      else
+        if data.Files[item[2]] ~= item[3] then
+          error("Packages have conflicting files. Please install in seperate directories.")
+        end
+      end
+    else
+      error(string.format("Unknown specifier '%s' in file.", item[1]))
+    end
+  end
+
+  return data
 end
 
 local function reinstallPackage(packageName, force)
