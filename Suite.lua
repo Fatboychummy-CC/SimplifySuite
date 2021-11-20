@@ -172,6 +172,7 @@ local function resolveDependencies(packageName, force, data)
   data = data or {}
   local _data = downloadPackageInfo(packageName)
 
+  -- for each returned dependency, assign the highest required build version needed.
   for k, v in pairs(_data) do
     if not data[k] or data[k] < v then
       data[k] = v
