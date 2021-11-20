@@ -71,6 +71,23 @@ local function linedFile(source)
   end
 end
 
+local function downloadFile(source, destination)
+  -- grab the file.
+  local h = http.get(source)
+  if not h then
+    error("Failed to connect.")
+  end
+  local data = h.readAll()
+  h.close()
+
+  -- write the file
+  local h2 = io.open(destination, 'w')
+  if not h2 then
+    error("Failed to open file for writing.")
+  end
+  h2:write(data):close()
+end
+
 -- remove spaces from a line of text.
 local function trimWhitespace(line)
   return line:gsub(' ', "")
