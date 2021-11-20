@@ -295,8 +295,13 @@ end
 
 -- Install a package.
 local function installPackage(packageName, force)
-  local remotePackages = getRemotePackages(force).Packages
-  local localPackages = getLocalPackages(LOCAL_CACHE_NAME, force)
+  local locals = getLocalPackages(LOCAL_CACHE_NAME, force)
+
+  if locals.Packages[packageName] then
+    return false, string.format("Package '%s' is already installed. To update it, use args \"--update (or -u)\".")
+  end
+
+  return updatePackage(packageName, force)
 end
 
 local function parseArguments(...)
