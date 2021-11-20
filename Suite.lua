@@ -209,6 +209,10 @@ local function resolveDependencies(packageName, force, data)
     DEP , 2           , Example-Dependency
     FILE,./echo.lua   , https://raw.githubusercontent.com/Fatboychummy-CC/SimplifySuite/main/Examples/echo.lua
   ]]
+  if not data.Files[packageName] then
+    data.Files[packageName] = {}
+  end
+
   for _, item in ipairs(data) do
     if item[1] == "DEP" then
       log.Low("Found dependency", item[3])
@@ -221,12 +225,15 @@ local function resolveDependencies(packageName, force, data)
         resolveDependencies(item[2], force, data)
       end
     elseif item[1] == "FILE" then
-      if not data.Files[item[2]] then
-        data.Files[item[2]] = item[3]
-      else
+      if data.Files[packageName][item[2]] then
         if data.Files[item[2]] ~= item[3] then
           error("Packages have conflicting files. Please install in seperate directories.")
         end
+      else
+        data.files[item[2]] = item[3]
+      end
+      if not data.Files[packageName][item[2]] then
+        data.Files[packageName][item[2]] = item[3]
       end
     else
       error(string.format("Unknown specifier '%s' in file.", item[1]))
@@ -241,14 +248,14 @@ local function reinstallPackage(packageName, force)
 end
 
 -- Update a package.
-local function updatePackage(packageName, force)
+local function updatePackage(packageName, force, dontDoDeps, data)
   local remotes = getRemotePackages(force).Packages
   local locals = getLocalPackages(LOCAL_CACHE_NAME, force)
   if not remotes.Packages[packageName] then
     return false, string.format("Could not find package '%s'.", packageName)
   end
   if not locals.Packages[packageName] then
-    return false, string.format("Package '%s' is not installed.", packageName)
+    log.Medium("Package", packageName, "is not installed. It will be installed.")
   end
   if not force and remotes.Packages[packageName] == locals.Packages[packageName] then
     return false, string.format("Package '%s' is already up-to-date.", packageName)
@@ -260,8 +267,30 @@ local function updatePackage(packageName, force)
   -- all checks done, package on remote must be higher version than local.
   -- download package information and check dependencies
   log.Normal("Resolving Dependencies.")
-  local data = resolveDependencies(packageName, force)
+  data = data or resolveDependencies(packageName, force)
 
+  -- check all dependencies are installed (if we aren't doing this operation from a parent updatePackage call)
+  if not dontDoDeps then
+    for _packageName, version in pairs(data.Packages) do
+      log.Normal("Checking package", _packageName, "(", version, ")")
+      if updatePackage(_packageName, force, true, data) then
+        log.Normal("Installed or updated", _packageName)
+      else
+        log.Medium("Skipped", _packageName)
+      end
+    end
+  end
+
+  -- install files required for this dependency.
+  for filename, remoteAddress in pairs(data.Files[packageName])) do
+    log.Low("Downloading", filename, "from", remoteAddress)
+    downloadFile(remoteAddress, filename)
+  end
+
+  if not dontDoDeps then
+    log.Normal("Done.")
+  end
+  return true
 end
 
 -- Install a package.
