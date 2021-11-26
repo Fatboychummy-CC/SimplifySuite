@@ -243,10 +243,6 @@ local function resolveDependencies(packageName, force, data)
   return data
 end
 
-local function reinstallPackage(packageName, force)
-
-end
-
 -- Update a package.
 local function updatePackage(packageName, force, dontDoDeps, data)
   local remotes = getRemotePackages(force).Packages
@@ -279,6 +275,8 @@ local function updatePackage(packageName, force, dontDoDeps, data)
         log.Medium("Skipped", _packageName)
       end
     end
+  else
+    log.Low("Oh, we didn't need those.")
   end
 
   -- install files required for this dependency.
@@ -309,8 +307,9 @@ local function removePackage(packageName)
 end
 local function reinstallPackage(packageName)
   removePackage(packageName)
-  return installPackage(packageName, true)
+  return updatePackage(packageName, true, true)
 end
+
 local parsers = {
   {"^%-%-(.-)=\"?\'?(.-)\'?\"?$", function(args, flag, data)
 
