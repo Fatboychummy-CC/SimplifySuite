@@ -305,6 +305,7 @@ end
 local function removePackage(packageName)
 
 end
+
 local function reinstallPackage(packageName)
   removePackage(packageName)
   return updatePackage(packageName, true, true)
