@@ -304,6 +304,98 @@ local function installPackage(packageName, force)
   return updatePackage(packageName, force)
 end
 
-local function parseArguments(...)
+local parsers = {
+  {"^%-%-(.-)=\"?\'?(.-)\'?\"?$", function(args, flag, data)
+
+  end},
+  {"^%-%-(.+)$", function(args, flag)
+
+  end},
+  {"^%-(.+)$", function(args, flag)
+
+  end},
+  {"^.+$", function(args, argument)
+
+  end}
+}
+
+local function quotize(_args)
   local args = {}
+  local n = 0
+  local inDouble, inSingle, escape = false, false, 2
+
+  -- check if a character is not escaped, and is equal to another character
+  local function eqNoEscape(charA, charB)
+    return escape == 0 and charA == charB
+  end
+
+  -- insert argument into thingy
+  local function insert(thonk)
+    n = n + 1
+    args[n] = thonk
+  end
+
+  -- for each argument
+  for _, arg in ipairs(_args) do
+    local mark, hit = false, false
+
+    -- if we're already inside quotes, note it for later.
+    if inDouble or inSingle then
+      mark = true
+    end
+
+    -- then check each character in a string for quotes.
+    -- sure I could use patterns for this but I am too tired to figure out what
+    -- kind of pattern I'd need for this.
+    for char in string.gmatch(arg, ".") do
+      if eqNoEscape(char, "\\") then
+        escape = 2 -- mark that the next character is escaped.
+      elseif inDouble and eqNoEscape(char, '"') then
+        inDouble = false -- we aren't in double quotes
+        hit = true -- mark that we should be at the end of the string.
+      elseif inSingle and eqNoEscape(char, "'") then
+        inSingle = false
+        hit = true
+      else
+        if eqNoEscape(char, '"') then
+          inDouble = true -- we entered a double quote
+        elseif eqNoEscape(char, "'") then
+          inSingle = true -- we entered a single quote
+        elseif hit then
+          error("Mismatching quotes.")
+        end
+      end
+
+      escape = escape <= 0 and 0 or escape - 1
+    end
+
+    -- if we're still in quotes and we marked that we were in quotes before...
+    if (inDouble or inSingle) and mark then
+      args[n] = args[n] .. ' ' .. arg -- add this argument to the previous one, with a space.
+    else -- otherwise just insert the argument normally.
+      insert(arg)
+    end
+  end
+
+  if inDouble or inSingle then
+    error("Mismatching quotes.")
+  end
+
+  return args
+end
+
+local function parseArguments(...)
+  local argsIn = quotize(table.pack(...))
+  local args = {}
+
+  for _, argument in ipairs(argsIn) do
+    for _, parser in ipairs(parsers) do
+      local data = table.pack(argument:match(parser[1]))
+      if data[1] then
+        parser[2](args, table.unpack(data, 1, data.n))
+      end
+    end
+  end
+
+  return args
 end
