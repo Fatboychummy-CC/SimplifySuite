@@ -304,6 +304,13 @@ local function installPackage(packageName, force)
   return updatePackage(packageName, force)
 end
 
+local function removePackage(packageName)
+
+end
+local function reinstallPackage(packageName)
+  removePackage(packageName)
+  return installPackage(packageName, true)
+end
 local parsers = {
   {"^%-%-(.-)=\"?\'?(.-)\'?\"?$", function(args, flag, data)
 
