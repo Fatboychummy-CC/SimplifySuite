@@ -319,5 +319,9 @@ if #args < 1 then
 end
 
 if args[1] == "install" then
-  installPackage(args[2], args[3])
+  installPackage(args[2], (args[3] or ""):lower() == "force")
+elseif args[1] == "update" then
+  updatePackage(args[2], (args[3] or ""):lower() == "force")
+elseif args[1] == "remove" or args[1] == "uninstall" then
+  removePackage(args[2])
 end
