@@ -37,11 +37,6 @@ local log = {
     print()
   end,
 }
-local oe = error
-local function error(a)
-  log.Error(a)
-  oe("", 0)
-end
 
 -- download a single file and return it as an array of lines.
 local function getLines(lineFunc)
@@ -68,7 +63,7 @@ local function linedFile(source)
     if h then
       return true, getLines(io.lines(source.Filename))
     end
-    return false, {n = 0}
+    return false, "File failed to open."
   end
 end
 
@@ -99,7 +94,7 @@ local function readCSV(source)
   local data = {packages = {}}
 
   local ok, lines = linedFile(source)
-  if not ok then error(lines) end
+  if not ok then return false, lines end
 
   for i = 2, lines.n do -- ignore the first line.
     local line = trimWhitespace(lines[i])
@@ -110,7 +105,7 @@ local function readCSV(source)
     data[i - 1] = lineData
   end
 
-  return data
+  return true, data
 end
 
 local function getCache()
@@ -136,18 +131,25 @@ local function getLocalPackages(filename, force)
     end
 
     -- read local package information
-    local data = readCSV {
+    local ok, data = readCSV {
       Source   = sources.LOCAL,
       Filename = LOCAL_CACHE_NAME
     }
+    if not ok then
+      -- no local cache.
+      log.Medium "There is no local cache."
+      cache.Local.Packages = {}
+      cache.Local.Expiry = -math.huge
+    else
 
-    -- cache it in format we want.
-    cache.Local.Packages = {}
-    for i, item in ipairs(data) do
-      -- format: {Build#, Package-Name}
-      cache.Local.Packages[item[2]] = tonumber[item[1]]
+      -- cache it in format we want.
+      cache.Local.Packages = {}
+      for i, item in ipairs(data) do
+        -- format: {Build#, Package-Name}
+        cache.Local.Packages[item[2]] = tonumber[item[1]]
+      end
+      cache.Local.Expiry = os.epoch() + CACHE_EXPIRY_TIME
     end
-    cache.Local.Expiry = os.epoch() + CACHE_EXPIRY_TIME
   end
 
   return cache.Local
@@ -164,18 +166,23 @@ local function getRemotePackages(force)
     end
 
     -- download and parse the file
-    local data = readCSV {
+    local ok, data = readCSV {
       Source  = sources.HTTP,
       Address = remotes.SuiteRoot .. remotes.AllRepos
     }
 
-    -- update remote cache
-    cache.Remote.Packages = {}
-    for i, item in ipairs(data) do
-      -- format: {Build#, Package-Name}
-      cache.Remote.Packages[item[2]] = tonumber[item[1]]
+    if not ok then
+      error("Failed to get remote package data.", 0)
+    else
+      log.Low("All is good.")
+      -- update remote cache
+      cache.Remote.Packages = {}
+      for i, item in ipairs(data) do
+        -- format: {Build#, Package-Name}
+        cache.Remote.Packages[item[2]] = tonumber(item[1])
+      end
+      cache.Remote.Expiry = os.epoch() + CACHE_EXPIRY_TIME
     end
-    cache.Remote.Expiry = os.epoch() + CACHE_EXPIRY_TIME
   end
 
   return cache.Remote
@@ -333,5 +340,6 @@ local ok, err = pcall(function()
 end)
 
 if not ok then
+  log.Error(err)
   log.High "If this is unexpected, please report this as an issue on github."
 end
