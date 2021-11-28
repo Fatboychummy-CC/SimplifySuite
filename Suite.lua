@@ -32,8 +32,9 @@ local log = {
   Error = function(...)
     term.setBackgroundColor(colors.red)
     term.setTextColor(colors.white)
-    print(...)
+    write(...)
     term.setBackgroundColor(colors.black)
+    print()
   end,
 }
 local oe = error
@@ -116,7 +117,7 @@ local function getCache()
   if not _G._SimplifySuiteCache then
     _G._SimplifySuiteCache = {
       Remote = {Expiry = -math.huge},
-      RemoteInfo = {}
+      RemoteInfo = {},
       Local = {Expiry = -math.huge},
     }
   end
@@ -280,7 +281,7 @@ local function updatePackage(packageName, force, dontDoDeps, data)
   end
 
   -- install files required for this dependency.
-  for filename, remoteAddress in pairs(data.Files[packageName])) do
+  for filename, remoteAddress in pairs(data.Files[packageName]) do
     log.Low("Downloading", filename, "from", remoteAddress)
     downloadFile(remoteAddress, filename)
   end
