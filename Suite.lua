@@ -314,14 +314,24 @@ end
 
 local args = table.pack(...)
 
-if #args < 1 then
-  error("Arguments needed.")
-end
+local ok, err = pcall(function()
+  if #args < 1 then
+    error("Arguments needed.")
+  end
 
-if args[1] == "install" then
-  installPackage(args[2], (args[3] or ""):lower() == "force")
-elseif args[1] == "update" then
-  updatePackage(args[2], (args[3] or ""):lower() == "force")
-elseif args[1] == "remove" or args[1] == "uninstall" then
-  removePackage(args[2])
+  if     args[1] == "install" or args[1] == "i" then
+    installPackage(args[2], (args[3] or ""):lower() == "force")
+  elseif args[1] == "update"  or args[1] == "u" then
+    updatePackage(args[2], (args[3] or ""):lower() == "force")
+  elseif args[1] == "remove"  or args[1] == "r" then
+    removePackage(args[2])
+  else
+    error("Unknown operation '" .. tostring(args[1]) .. "'")
+  end
+
+  log.Normal "All operations completed."
+end)
+
+if not ok then
+  log.High "If this is unexpected, please report this as an issue on github."
 end
