@@ -311,7 +311,10 @@ local function installPackage(packageName, force)
 end
 
 local function removePackage(packageName)
+  local locals = getLocalPackages(LOCAL_CACHE_NAME, force)
+  if locals.Packages[packageName] then
 
+  end
 end
 
 local function reinstallPackage(packageName)
