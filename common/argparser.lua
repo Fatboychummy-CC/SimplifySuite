@@ -11,13 +11,13 @@ local parsers = {
     function(self, flag, value) -- Parse flags like "--flag=value"
       self.flags[flag] = value
     end
-  }
+  },
   {
     "%-%-(.+)",
     function(self, flag) -- Parse flags like "--flag"
       self.flags[flag] = true
     end
-  }
+  },
   {
     "%-(.+)",
     function(self, flag) -- Parse flags like "-fabc"
@@ -25,7 +25,7 @@ local parsers = {
         self.flags[char] = true
       end
     end
-  }
+  },
   {
     ".+",
     function(self, arg) -- Parse normal arguments
