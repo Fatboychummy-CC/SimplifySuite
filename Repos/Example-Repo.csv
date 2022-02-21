@@ -1,3 +1,0 @@
-TYPE, FILENAME/MIN, REMOTE_LOCATION/PACKAGE
-DEP , 2           , Example-Dependency
-FILE,./echo.lua   , https://raw.githubusercontent.com/Fatboychummy-CC/SimplifySuite/main/Examples/echo.lua
