@@ -2,6 +2,7 @@
 -- @module fileutil
 -- @author Fatboychummy
 
+local expect = require "cc.expect".expect
 
 local fileutil = {}
 
@@ -11,6 +12,8 @@ local fileutil = {}
 -- @error File Not Found
 -- @error Unknown Error
 function fileutil.readAllSerialized(filename)
+  expect(1, filename, "string")
+
   if not fs.exists(filename) then
     error(string.format("File not found: %s", filename), 2)
   end
@@ -30,6 +33,8 @@ end
 -- @tparam string filename The file to be written to.
 -- @tparam any data The data to be written.
 function fileutil.writeSerialized(filename, data)
+  expect(1, filename, "string")
+
   local h, err = io.open(filename, 'w')
   if not h then
     error(string.format("Failed to open file '%s' for writing due to: %s", filename, err), 2)
@@ -45,6 +50,8 @@ end
 -- @error checkURL failed.
 -- @error Failed to Connect
 function fileutil.getRemoteFile(remote)
+  expect(1, remote, "string")
+
   local ok, err = http.checkURL(remote)
   if not ok then
     error(string.format("checkURL failed: %s", err), 2)
