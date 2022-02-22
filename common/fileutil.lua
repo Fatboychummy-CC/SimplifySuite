@@ -135,11 +135,4 @@ function fileutil.writeCSV(filename, data)
   h:close()
 end
 
-function fileutil.source(source, location)
-  return {
-    source = ln,
-    location = location
-  }
-end
-
 return fileutil
