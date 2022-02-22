@@ -56,26 +56,19 @@ local function getFile(source)
 end
 
 --- This will read all of the contents of a file, returning it as a serialized table.
--- @tparam string filename The name of the file to be read.
+-- @tparam string source The name of the file to be read, or http location.
 -- @treturn any The serialized data from the file.
 -- @error File Not Found
 -- @error Unknown Error
-function fileutil.readAllSerialized(filename)
-  expect(1, filename, "string")
+function fileutil.readAllSerialized(source)
+  expect(1, source, "string")
 
-  if not fs.exists(filename) then
-    error(string.format("File not found: %s", filename), 2)
+  local handle, err = getFile(source)
+  if not handle then
+    error(err, 2)
   end
 
-  local h, err = io.open(filename, 'r')
-  if not h then
-    error(string.format("Unknown error when opening file for reading: %s", err), 2)
-  end
-
-  local data = h:read("*a")
-  h:close()
-
-  return textutils.serialize(data)
+  return textutils.serialize(handle.readAll())
 end
 
 --- This will write some data to a file in a serialized format.
