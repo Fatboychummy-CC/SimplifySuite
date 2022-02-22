@@ -6,6 +6,55 @@ local expect = require "cc.expect".expect
 
 local fileutil = {}
 
+--- Grabs a file from a remote source, or local.
+-- returns a filehandle which is unified between all, built for reading.
+-- Handle-safe, reads information, closes, then returns a readable thing.
+local function getFile(source)
+  if http.checkURL(source) then
+    local h, err = http.get(source)
+    if not h then
+      return false, err
+    end
+
+    local lines = {}
+    for line in h.readLine do
+      lines[#lines + 1] = line
+    end
+    h.close()
+
+    local line = 0
+    return {
+      readLine = function()
+        line = line + 1
+        return lines[line]
+      end,
+      readAll = function()
+        return table.concat(lines, '\n')
+      end
+    }
+  end
+
+  if not fs.exists(source) then
+    return false, "File does not exist."
+  end
+
+  local lines = {}
+  for line in io.lines(source) do
+    lines[#lines + 1] = line
+  end
+
+  local line = 0
+  return {
+    readLine = function()
+      line = line + 1
+      return lines[line]
+    end,
+    readAll = function()
+      return table.concat(lines, '\n')
+    end
+  }
+end
+
 --- This will read all of the contents of a file, returning it as a serialized table.
 -- @tparam string filename The name of the file to be read.
 -- @treturn any The serialized data from the file.
