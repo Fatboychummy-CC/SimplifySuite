@@ -103,7 +103,7 @@ function fileutil.readCSV(source)
     local data = {}
 
     for variable in line:gmatch("[^,]+") do
-      data[#data + 1] = variable
+      data[#data + 1] = variable:gsub(' ', "")
     end
 
     lines[#lines + 1] = data
