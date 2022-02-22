@@ -7,19 +7,19 @@ local argparser = {}
 -- @table parsers The different parser function which check for arguments or flags.
 local parsers = {
   {
-    "%-%-(.-)=(.+)",
+    "^%-%-(.-)=(.+)",
     function(self, flag, value) -- Parse flags like "--flag=value"
       self.flags[flag] = value
     end
   },
   {
-    "%-%-(.+)",
+    "^%-%-(.+)",
     function(self, flag) -- Parse flags like "--flag"
       self.flags[flag] = true
     end
   },
   {
-    "%-(.+)",
+    "^%-(.+)",
     function(self, flag) -- Parse flags like "-fabc"
       for char in flag:gmatch(".") do
         self.flags[char] = true
