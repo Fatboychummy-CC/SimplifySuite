@@ -107,7 +107,11 @@ function fileutil.getRemoteFile(remote)
   local data = h.readAll()
   h.close()
 
-  return data
+function fileutil.source(source, location)
+  return {
+    source = ln,
+    location = location
+  }
 end
 
 return fileutil
