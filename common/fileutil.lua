@@ -86,26 +86,54 @@ function fileutil.writeSerialized(filename, data)
   h:close()
 end
 
---- This will download a file from a remote location (over http[s]) and return the contents.
--- @tparam string remote The remote location to download file from.
--- @treturn string The contents of the file.
--- @error checkURL failed.
--- @error Failed to Connect
-function fileutil.getRemoteFile(remote)
-  expect(1, remote, "string")
+--- Read a CSV (Comma Seperated Variable) file into a table of tables.
+-- @tparam string source The file to be read, or http location.
+-- @treturn {{string, ...}, ...} CSV file as a table.
+function fileutil.readCSV(source)
+  expect(1, source, "string")
 
-  local ok, err = http.checkURL(remote)
-  if not ok then
-    error(string.format("checkURL failed: %s", err), 2)
+  local handle, err = getFile(source)
+  if not handle then
+    error(err, 2)
   end
 
-  local h, err = http.get(remote)
+  local lines = {}
+
+  for line in handle.readLine do
+    local data = {}
+
+    for variable in line:gmatch("[^,]+") do
+      data[#data + 1] = variable
+    end
+
+    lines[#lines + 1] = data
+  end
+
+  return lines
+end
+
+--- Write a CSV (Comma Seperated Variable) file from a table of information.
+-- @tparam string filename The name of the file to write to.
+-- @tparam {{string, ...}, ...} data The information to be written to the file, as CSV.
+function fileutil.writeCSV(filename, data)
+  expect(1, filename, "string")
+  expect(2, data, "table")
+
+  local h, err = io.open(filename, 'w')
   if not h then
-    error(string.format("Failed to connect to %s: %s", remote, err), 2)
+    error("File failed to open for writing.", 2)
   end
 
-  local data = h.readAll()
-  h.close()
+  local function combine(line)
+    return table.concat(line, ',') .. '\n'
+  end
+
+  for i = 1, #data do
+    h:write(combine(data[i]))
+  end
+
+  h:close()
+end
 
 function fileutil.source(source, location)
   return {
