@@ -60,6 +60,16 @@ function log.create(name)
     term.setTextColor(old)
     error("", 0)
   end
+  function logger:trace(...)
+    checkself(self)
+
+    if self.Level == 0 then
+      local old = term.getTextColor()
+      term.setTextColor(colors.orange)
+      writeLog(self, "TRCE", ...)
+      term.setTextColor(old)
+    end
+  end
 
   return logger
 end
