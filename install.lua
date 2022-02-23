@@ -45,6 +45,38 @@ local function printHelp()
   tprint.printAt(5, "Install a package (or packages) with name given by the argument.")
 end
 
+local function getPackages()
+  log:info("Getting list of all packages...")
+  local packages = fileutil.readCSV(ALL_PACKAGES_URL)
+
+  log:info("Determining longest package name.")
+  local longest = 0
+  for i = 2, #packages do
+    if #packages[i][1] > longest then
+      longest = #packages[i][1]
+    end
+  end
+
+
+  log:info("Printing packages.")
+  for i = 1, #packages do
+    if i == 1 then term.setTextColor(colors.blue) else term.setTextColor(colors.white) end
+    print(string.format(string.format("%%%ds , %%s", -longest), packages[i][1], packages[i][2]))
+  end
+end
 if args.flags.h or args.flags.help or args.args.n == 0 then
   printHelp()
+  return
+end
+
+local verbose = args.flags.v or args.flags.verbose
+if not verbose then
+  log.Level = 1
+end
+
+log:info("Verbose logging is on.")
+
+if args.args[1] == "get-packages" then
+  getPackages()
+  return
 end
