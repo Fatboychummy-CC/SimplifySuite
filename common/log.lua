@@ -3,18 +3,16 @@
 
 local log = {}
 
-local function writeLog(loggerName, level, ...)
+local function writeLog(logObj, level, ...)
   local arguments = table.pack(...)
   for i = 1, arguments.n do
     arguments[i] = tostring(arguments[i])
   end
   local text = table.concat(arguments, ' ')
 
-  local time = os.epoch("utc")
-  local ms = time % 1000
-  local date = string.format("%s:%03d", os.date("%H:%M:%S", time / 1000), ms)
+  local time = os.epoch("utc") - logObj.StartTime
 
-  print(string.format("[%s][%s][%s]: %s", level, loggerName, date, text))
+  print(string.format("[%s][%s][%d]: %s", level, logObj.Name, time, text))
 end
 
 local _LOG_IDENTIFIER = {}
@@ -32,14 +30,15 @@ function log.create(name)
   local logger = {
     Name = name, -- The name of this log, displayed in the output.
     Level = 0, -- Logging level: 0 = all, 1 = warns/errors, 2 = errors only
-    __IDENTIFIER = _LOG_IDENTIFIER -- This allows us to check for the usage of ':', and throw an error when it's missing.
+    __IDENTIFIER = _LOG_IDENTIFIER, -- This allows us to check for the usage of ':', and throw an error when it's missing.
+    StartTime = os.epoch("utc")
   }
 
   function logger:info(...)
     checkself(self)
 
     if self.Level == 0 then
-      writeLog(self.Name, "INFO", ...)
+      writeLog(self, "INFO", ...)
     end
   end
   function logger:warn(...)
@@ -48,7 +47,7 @@ function log.create(name)
     if self.Level < 3 then
       local old = term.getTextColor()
       term.setTextColor(colors.yellow)
-      writeLog(self.Name, "WARN", ...)
+      writeLog(self, "WARN", ...)
       term.setTextColor(old)
     end
   end
@@ -57,8 +56,9 @@ function log.create(name)
 
     local old = term.getTextColor()
     term.setTextColor(colors.red)
-    writeLog(self.Name, "ERR ", ...)
+    writeLog(self, "ERR ", ...)
     term.setTextColor(old)
+    error("", 0)
   end
 
   return logger
