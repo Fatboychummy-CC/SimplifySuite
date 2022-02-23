@@ -47,7 +47,11 @@ end
 
 local function getPackages()
   log:info("Getting list of all packages...")
-  local packages = fileutil.readCSV(ALL_PACKAGES_URL)
+  return fileutil.readCSV(ALL_PACKAGES_URL)
+end
+
+local function printPackages()
+  local packages = getPackages()
 
   log:info("Determining longest package name.")
   local longest = 0
@@ -56,7 +60,6 @@ local function getPackages()
       longest = #packages[i][1]
     end
   end
-
 
   log:info("Printing packages.")
   for i = 1, #packages do
@@ -77,6 +80,6 @@ end
 log:info("Verbose logging is on.")
 
 if args.args[1] == "get-packages" then
-  getPackages()
+  printPackages()
   return
 end
